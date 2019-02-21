@@ -15,7 +15,6 @@ gs.gene<-gs[grep("symbol",gs.name)]
 
 #读取tcm有效kegg通路
 tcm<-read_excel("batman-I2019-02-14-95328-1550137711-EnrichmentResult-Cutoff=20targets.xls")
-tcm.all<-read.delim2("batman-I2019-02-14-95328-1550137711-cluster1-ScoreGT2targets.txt")
 
 tcm.name<-colnames(tcm)
 colnames(tcm)[6]<-"p-value|benjamini-value|coverage|EnrichRatio|gene names"
@@ -71,24 +70,53 @@ dotplot(gs.kegg,showCategory = 20)
 tcm.all<-read.delim2("batman-I2019-02-14-95328-1550137711-cluster1-ScoreGT2targets.txt",header = FALSE)
 compond.gene.all<-data.frame("compond"=NA,
                              "gene.name"=NA,
-                             "gene.id"=NA)
-for (i in 1:length(tcm.all)) {
+                             "gene.id"=NA,
+                             "gene.score"=NA)
+for (i in 1:3) {
   gene.local.name<-c()
   gene.local.id<-c()
+  gene.local.score<-c()
   for (h in 3:dim(tcm.all)[2]){
   gene.s<-as.vector(tcm.all[i,h])
   gene.string.front<-regexpr("[|]",gene.s)
   gene.string.back<-regexpr("[(]",gene.s)
   gene.loci.id<-substr(gene.s,0,gene.string.front-1)
   gene.loci.name<-substr(gene.s,gene.string.front+1,gene.string.back-1)
+  gene.loci.score<-substr(gene.s,gene.string.back+1,nchar("gene.s"))
   gene.local.name<-c(gene.local.name,gene.loci.name)
   gene.local.id<-c(gene.local.id,gene.loci.id)
+  gene.local.score<-c(gene.local.score,gene.loci.score)
 }
   compond.gene<-data.frame( "compond"=as.vector(tcm.all[i,1]),
               "gene.name"=gene.local.name,
-              "gene.id"=gene.local.id)
+              "gene.id"=gene.local.id,
+              "gene.score"=gene.local.score)
   compond.gene.all<-rbind(compond.gene.all,compond.gene)
 }
+
+c<-proc.time()
+for (i in 1:3) {
+  gene.local.name<-list()
+  gene.local.id<-list()
+  gene.local.score<-list()
+  for (h in 3:dim(tcm.all)[2]){
+    gene.s<-as.vector(tcm.all[i,h])
+    gene.string.front<-regexpr("[|]",gene.s)
+    gene.string.back<-regexpr("[(]",gene.s)
+    gene.loci.id<-substr(gene.s,0,gene.string.front-1)
+    gene.loci.name<-substr(gene.s,gene.string.front+1,gene.string.back-1)
+    gene.loci.score<-substr(gene.s,gene.string.back+1,nchar(gene.s)-1)
+    gene.local.name<-append(gene.local.name,gene.loci.name)
+    gene.local.id<-append(gene.local.id,gene.loci.id)
+    gene.local.score<-append(gene.local.score,gene.loci.score)
+  }
+  compond.gene<-data.frame( "compond"=as.vector(tcm.all[i,1]),
+                            "gene.name"=unlist(gene.local.name),
+                            "gene.id"=unlist(gene.local.id),
+                            "gene.score"=unlist(gene.local.score))
+  compond.gene.all<-rbind(compond.gene.all,compond.gene)
+}
+d<-proc.time()
 
 #全部tcm调控和疾病共同基因
 colnames(compond.gene.all)[2]<-"symbol"
